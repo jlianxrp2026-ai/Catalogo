@@ -4,16 +4,20 @@ import productosData from './productos.json'
 
 function App() {
   const [activeCategory, setActiveCategory] = useState('Todas')
+  const [activeGender, setActiveGender] = useState('Todos')
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
 
   // Extraer categorías únicas
   const categories = ['Todas', ...new Set(productosData.map(p => p.category))]
+  const genders = ['Todos', 'Damas', 'Caballeros']
 
   // Filtrar productos
-  const filteredProducts = activeCategory === 'Todas' 
-    ? productosData 
-    : productosData.filter(p => p.category === activeCategory)
+  const filteredProducts = productosData.filter(p => {
+    const matchCategory = activeCategory === 'Todas' || p.category === activeCategory
+    const matchGender = activeGender === 'Todos' || p.subcategory === activeGender || p.subcategory === null // null subcategory implies unisex/general
+    return matchCategory && matchGender
+  })
 
   // Manejar adición al carrito
   const addToCart = (product, selectedOption) => {
@@ -62,16 +66,31 @@ function App() {
       </header>
 
       <main className="main-content">
-        <div className="categories-filter">
-          {categories.map(cat => (
-            <button 
-              key={cat}
-              className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
-              onClick={() => setActiveCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="filters-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+          <div className="categories-filter" style={{ marginBottom: 0 }}>
+            {categories.map(cat => (
+              <button 
+                key={cat}
+                className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          
+          <div className="categories-filter" style={{ marginBottom: 0 }}>
+            <span style={{ padding: '0.75rem 0', fontWeight: 'bold', color: 'var(--primary-color)' }}>Para:</span>
+            {genders.map(gen => (
+              <button 
+                key={gen}
+                className={`category-btn ${activeGender === gen ? 'active' : ''}`}
+                onClick={() => setActiveGender(gen)}
+              >
+                {gen}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="products-grid">
