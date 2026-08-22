@@ -2,9 +2,13 @@ import { useState } from 'react'
 import './index.css'
 import productosData from './productos.json'
 
+import { track } from '@vercel/analytics';
+import { Analytics } from '@vercel/analytics/react';
+
 function App() {
   const [activeCategory, setActiveCategory] = useState('Todas')
   const [activeGender, setActiveGender] = useState('Todos')
+  const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
 
@@ -16,8 +20,15 @@ function App() {
   const filteredProducts = productosData.filter(p => {
     const matchCategory = activeCategory === 'Todas' || p.category === activeCategory
     const matchGender = activeGender === 'Todos' || p.subcategory === activeGender || p.subcategory === null // null subcategory implies unisex/general
-    return matchCategory && matchGender
+    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchCategory && matchGender && matchSearch
   })
+
+  const handleSearchBlur = () => {
+    if (searchQuery.trim().length > 2) {
+      track('Search', { query: searchQuery.trim() })
+    }
+  }
 
   // Manejar adición al carrito
   const addToCart = (product, selectedOption) => {
@@ -66,6 +77,26 @@ function App() {
       </header>
 
       <main className="main-content">
+        <div className="search-container" style={{ marginBottom: '1.5rem' }}>
+          <input 
+            type="text" 
+            placeholder="Buscar perfume (ej. Hawas Ice, Coco Chanel)..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onBlur={handleSearchBlur}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--surface-color)',
+              color: 'var(--text-main)',
+              fontSize: '1rem',
+              outline: 'none'
+            }}
+          />
+        </div>
+
         <div className="filters-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
           <div className="categories-filter" style={{ marginBottom: 0 }}>
             {categories.map(cat => (
@@ -160,6 +191,7 @@ function App() {
           </div>
         </div>
       </div>
+      <Analytics />
     </div>
   )
 }
