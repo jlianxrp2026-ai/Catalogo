@@ -6,6 +6,7 @@
   --bg-card: #111113;
   --bg-card-hover: #17171a;
   --surface-light: #1f1f23;
+  --surface-elevated: #161619;
   --text-primary: #ffffff;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
@@ -14,6 +15,7 @@
   --accent-white: #ffffff;
   --accent-black: #000000;
   --glass-header: rgba(0, 0, 0, 0.85);
+  --glass-modal: rgba(13, 13, 16, 0.96);
 }
 
 * {
@@ -29,6 +31,10 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 /* Custom Scrollbar */
@@ -427,7 +433,7 @@ body {
   gap: 1.8rem;
 }
 
-/* Product Card - Clean Minimalist */
+/* Product Card - Clean Minimalist with clickable detail */
 .product-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -436,12 +442,19 @@ body {
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.8);
+}
+
+.product-card-clickable {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-image-container {
@@ -464,14 +477,20 @@ body {
 }
 
 .product-card:hover .product-image {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
-.product-badge {
+.product-badge-group {
   position: absolute;
   top: 0.85rem;
   left: 0.85rem;
-  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  gap: 0.4rem;
+  z-index: 2;
+}
+
+.product-badge {
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
   color: #ffffff;
   font-size: 0.68rem;
@@ -481,6 +500,30 @@ body {
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: 500;
+}
+
+.detail-hint-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.25s ease;
+  z-index: 2;
+}
+
+.product-card:hover .detail-hint-badge {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
 }
 
 .product-info {
@@ -503,9 +546,30 @@ body {
   font-size: 1.15rem;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.6rem;
   line-height: 1.35;
-  min-height: 2.8rem;
+  transition: color 0.2s;
+}
+
+.product-card:hover .product-name {
+  color: #ffffff;
+}
+
+/* Preview of main accords in card */
+.product-accords-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+}
+
+.accord-pill-mini {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
 }
 
 .product-options {
@@ -565,6 +629,393 @@ body {
   background: #000000;
   color: #ffffff;
   border-color: #ffffff;
+}
+
+.add-to-cart-btn.added {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+/* ==============================================================
+   FRAGRANTICA-STYLE PERFUME DETAIL MODAL ("Pestaña sin cambiar")
+   ============================================================== */
+.perfume-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.perfume-modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.perfume-modal {
+  background: #0d0d10;
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 980px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(24px) scale(0.97);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.95);
+}
+
+.perfume-modal-overlay.open .perfume-modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header-bar {
+  padding: 1.25rem 2rem;
+  background: #131317;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.modal-header-category {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.modal-close-btn:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.modal-content-scroll {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2.5rem;
+}
+
+/* Left Column: Image, Quick Specs & Order */
+.modal-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modal-image-box {
+  width: 100%;
+  height: 350px;
+  border-radius: 14px;
+  background: #000000;
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.modal-perfume-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.spec-card {
+  background: #141418;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spec-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.spec-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Modal Purchase Section */
+.modal-purchase-box {
+  background: #141418;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.purchase-box-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.modal-whatsapp-direct-btn {
+  width: 100%;
+  background: transparent;
+  color: #25D366;
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.modal-whatsapp-direct-btn:hover {
+  background: rgba(37, 211, 102, 0.1);
+  border-color: #25D366;
+}
+
+/* Right Column: Fragrantica-inspired details */
+.modal-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.detail-title-section {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1.5rem;
+}
+
+.detail-perfume-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.detail-perfume-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Accords Section */
+.fragrantica-section-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.accords-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.accord-tag {
+  background: #18181d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.45rem 1rem;
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.accord-tag:hover {
+  border-color: #ffffff;
+  background: #24242b;
+}
+
+/* Olfactory Pyramid (Pirámide Olfativa) */
+.pyramid-box {
+  background: #121216;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pyramid-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pyramid-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+}
+
+.pyramid-tier-header .tier-timing {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  text-transform: none;
+}
+
+.notes-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-left: 1.5rem;
+}
+
+.note-chip {
+  background: #1a1a20;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.note-chip:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Climate & Seasons Section */
+.climate-box {
+  background: #121216;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.climate-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.climate-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.climate-subgroup-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.season-badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.season-badge {
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.season-badge.recommended {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+}
+
+.occasion-text-box {
+  background: #18181d;
+  border-left: 3px solid #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 /* Empty search state */
@@ -903,6 +1354,20 @@ body {
 }
 
 /* Responsive adjustments */
+@media (max-width: 900px) {
+  .modal-content-scroll {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .modal-image-box {
+    height: 280px;
+  }
+  .climate-groups {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 0.75rem 1rem;
@@ -926,7 +1391,7 @@ body {
   .product-name {
     font-size: 0.95rem;
     min-height: 2.4rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
   .add-to-cart-btn {
     font-size: 0.78rem;
@@ -939,5 +1404,11 @@ body {
   .footer-social-links {
     flex-wrap: wrap;
     justify-content: center;
+  }
+  .modal-content-scroll {
+    padding: 1.25rem;
+  }
+  .detail-perfume-title {
+    font-size: 1.45rem;
   }
 }

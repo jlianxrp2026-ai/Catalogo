@@ -11,6 +11,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [selectedPerfume, setSelectedPerfume] = useState(null)
 
   // Animated splash screen on initial catalog visit
   useEffect(() => {
@@ -18,6 +19,27 @@ function App() {
       setShowSplash(false)
     }, 1800)
     return () => clearTimeout(timer)
+  }, [])
+
+  // Lock body scroll when a modal is open
+  useEffect(() => {
+    if (selectedPerfume || isCartOpen) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+  }, [selectedPerfume, isCartOpen])
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedPerfume(null)
+        setIsCartOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   // Extraer categorías únicas
@@ -156,7 +178,7 @@ function App() {
       <main className="main-content">
         <div className="hero-minimal">
           <h2 className="hero-title">Colección Exclusiva</h2>
-          <p className="hero-subtitle">Árabes • Diseñador • Nicho • Genéricos</p>
+          <p className="hero-subtitle">Descubre la pirámide olfativa y notas de cada perfume</p>
         </div>
 
         {/* Search Bar Minimalist */}
@@ -168,7 +190,7 @@ function App() {
             </svg>
             <input 
               type="text" 
-              placeholder="Buscar por nombre de perfume (ej. Hawas, Sauvage, Yara)..." 
+              placeholder="Buscar por nombre (ej. Hawas, Sauvage, Yara, Khamrah)..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onBlur={handleSearchBlur}
@@ -216,7 +238,7 @@ function App() {
 
         {/* Counter */}
         <div className="products-counter">
-          {filteredProducts.length} {filteredProducts.length === 1 ? 'perfume disponible' : 'perfumes disponibles'}
+          {filteredProducts.length} {filteredProducts.length === 1 ? 'perfume disponible' : 'perfumes disponibles'} • Toca cualquier perfume para ver sus notas
         </div>
 
         {/* Products Grid */}
@@ -233,7 +255,12 @@ function App() {
         ) : (
           <div className="products-grid">
             {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} onAdd={addToCart} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onAdd={addToCart}
+                onSelectPerfume={setSelectedPerfume}
+              />
             ))}
           </div>
         )}
@@ -256,6 +283,17 @@ function App() {
           </span>
         )}
       </button>
+
+      {/* ==============================================================
+          PERFUME DETAIL MODAL (Fragrantica Style) "Pestaña sin cambiar"
+          ============================================================== */}
+      {selectedPerfume && (
+        <PerfumeDetailModal 
+          product={selectedPerfume}
+          onClose={() => setSelectedPerfume(null)}
+          onAdd={addToCart}
+        />
+      )}
 
       {/* Cart Modal */}
       <div className={`modal-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}>
@@ -381,44 +419,336 @@ function App() {
   )
 }
 
-function ProductCard({ product, onAdd }) {
+function ProductCard({ product, onAdd, onSelectPerfume }) {
   const [selectedOptionIdx, setSelectedOptionIdx] = useState(0)
+  const [isAddedFeedback, setIsAddedFeedback] = useState(false)
   const selectedOption = product.options[selectedOptionIdx]
+
+  const handleAdd = (e) => {
+    e.stopPropagation()
+    onAdd(product, selectedOption)
+    setIsAddedFeedback(true)
+    setTimeout(() => setIsAddedFeedback(false), 1200)
+  }
 
   return (
     <div className="product-card">
-      <div className="product-image-container">
-        <span className="product-badge">{product.category}</span>
-        <img src={product.image} alt={product.name} className="product-image" loading="lazy" />
-      </div>
-      <div className="product-info">
-        <div className="product-category-text">
-          {product.subcategory ? `${product.subcategory}` : product.category}
-        </div>
-        <h3 className="product-name">{product.name}</h3>
-        
-        <div className="product-options">
-          <select 
-            className="option-select"
-            value={selectedOptionIdx}
-            onChange={(e) => setSelectedOptionIdx(Number(e.target.value))}
-          >
-            {product.options.map((opt, idx) => (
-              <option key={idx} value={idx}>
-                {opt.size} - {opt.price === 'Cotizar en tienda' ? 'Cotizar en tienda' : `Q${opt.price}`}
-              </option>
-            ))}
-          </select>
-          <button 
-            className="add-to-cart-btn"
-            onClick={() => onAdd(product, selectedOption)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
+      <div 
+        className="product-card-clickable"
+        onClick={() => onSelectPerfume(product)}
+        title="Toca para ver notas olfativas y clima recomendado"
+      >
+        <div className="product-image-container">
+          <div className="product-badge-group">
+            <span className="product-badge">{product.category}</span>
+          </div>
+          <span className="detail-hint-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            Agregar al Pedido
-          </button>
+            Ver Notas
+          </span>
+          <img src={product.image} alt={product.name} className="product-image" loading="lazy" />
+        </div>
+
+        <div className="product-info">
+          <div className="product-category-text">
+            {product.subcategory ? `${product.subcategory}` : product.category}
+          </div>
+          <h3 className="product-name">{product.name}</h3>
+
+          {/* Mini preview of main accords */}
+          {product.accords && product.accords.length > 0 && (
+            <div className="product-accords-preview">
+              {product.accords.slice(0, 3).map((accord, i) => (
+                <span key={i} className="accord-pill-mini">{accord}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="product-options" style={{ padding: '0 1.35rem 1.35rem' }}>
+        <select 
+          className="option-select"
+          value={selectedOptionIdx}
+          onChange={(e) => setSelectedOptionIdx(Number(e.target.value))}
+        >
+          {product.options.map((opt, idx) => (
+            <option key={idx} value={idx}>
+              {opt.size} - {opt.price === 'Cotizar en tienda' ? 'Cotizar en tienda' : `Q${opt.price}`}
+            </option>
+          ))}
+        </select>
+        <button 
+          className={`add-to-cart-btn ${isAddedFeedback ? 'added' : ''}`}
+          onClick={handleAdd}
+        >
+          {isAddedFeedback ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              ¡Agregado!
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Agregar al Pedido
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PerfumeDetailModal({ product, onClose, onAdd }) {
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState(0)
+  const [isAddedFeedback, setIsAddedFeedback] = useState(false)
+  const selectedOption = product.options[selectedOptionIdx]
+
+  const handleAddModal = () => {
+    onAdd(product, selectedOption)
+    setIsAddedFeedback(true)
+    setTimeout(() => setIsAddedFeedback(false), 1400)
+  }
+
+  // Pre-formatted direct WhatsApp inquiry for this specific perfume
+  const directWhatsAppUrl = () => {
+    const phone = "50231158711"
+    const priceText = selectedOption.price === 'Cotizar en tienda' ? 'Cotizar en tienda' : `Q${selectedOption.price}`
+    const text = `¡Hola! Me interesa cotizar/pedir este perfume del catálogo:%0A%0A*${product.name}*%0A- Presentación: ${selectedOption.size} (${priceText})%0A- Categoría: ${product.category} ${product.subcategory || ''}%0A%0A¿Tienen disponibilidad?`
+    return `https://wa.me/${phone}?text=${text}`
+  }
+
+  const allSeasons = ["Primavera", "Verano", "Otoño", "Invierno"]
+  const recommendedSeasons = product.climate?.seasons || []
+  const isRecommended = (s) => recommendedSeasons.includes(s) || recommendedSeasons.includes("Todas las estaciones")
+
+  return (
+    <div className="perfume-modal-overlay open" onClick={onClose}>
+      <div className="perfume-modal" onClick={e => e.stopPropagation()}>
+        {/* Modal Top Header */}
+        <div className="modal-header-bar">
+          <div className="modal-header-info">
+            <span className="modal-header-category">
+              {product.category} {product.subcategory ? `• ${product.subcategory}` : ''}
+            </span>
+          </div>
+          <button className="modal-close-btn" onClick={onClose} title="Cerrar detalles">✕</button>
+        </div>
+
+        {/* Modal Content Grid */}
+        <div className="modal-content-scroll">
+          {/* Left Column: Image, Specs & Order */}
+          <div className="modal-left-column">
+            <div className="modal-image-box">
+              <img src={product.image} alt={product.name} className="modal-perfume-img" />
+            </div>
+
+            {/* Quick Specs Cards */}
+            <div className="modal-specs-grid">
+              <div className="spec-card">
+                <span className="spec-label">Duración</span>
+                <span className="spec-value">8 - 12+ Horas</span>
+              </div>
+              <div className="spec-card">
+                <span className="spec-label">Estela</span>
+                <span className="spec-value">Mod. a Intensa</span>
+              </div>
+              <div className="spec-card">
+                <span className="spec-label">Género</span>
+                <span className="spec-value">{product.subcategory || 'Unisex'}</span>
+              </div>
+              <div className="spec-card">
+                <span className="spec-label">Concentración</span>
+                <span className="spec-value">Eau De Parfum</span>
+              </div>
+            </div>
+
+            {/* Purchase Options */}
+            <div className="modal-purchase-box">
+              <span className="purchase-box-title">Seleccionar Presentación</span>
+              <select 
+                className="option-select"
+                value={selectedOptionIdx}
+                onChange={(e) => setSelectedOptionIdx(Number(e.target.value))}
+              >
+                {product.options.map((opt, idx) => (
+                  <option key={idx} value={idx}>
+                    {opt.size} - {opt.price === 'Cotizar en tienda' ? 'Cotizar en tienda' : `Q${opt.price}`}
+                  </option>
+                ))}
+              </select>
+
+              <button 
+                className={`add-to-cart-btn ${isAddedFeedback ? 'added' : ''}`}
+                onClick={handleAddModal}
+              >
+                {isAddedFeedback ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    ¡Agregado a tu pedido!
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Agregar al Pedido
+                  </>
+                )}
+              </button>
+
+              <a 
+                href={directWhatsAppUrl()} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="modal-whatsapp-direct-btn"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                Pedir directo por WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Right Column: Fragrantica Notes & Climate */}
+          <div className="modal-right-column">
+            {/* Title & Description */}
+            <div className="detail-title-section">
+              <h2 className="detail-perfume-title">{product.name}</h2>
+              <p className="detail-perfume-desc">{product.description}</p>
+            </div>
+
+            {/* Acordes Principales (como Fragrantica) */}
+            {product.accords && product.accords.length > 0 && (
+              <div>
+                <h4 className="fragrantica-section-title">
+                  <span>✦</span> Acordes Principales
+                </h4>
+                <div className="accords-tags-list">
+                  {product.accords.map((accord, idx) => (
+                    <span key={idx} className="accord-tag">{accord}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pirámide Olfativa */}
+            {product.notes && (
+              <div>
+                <h4 className="fragrantica-section-title">
+                  <span>▲</span> Pirámide Olfativa
+                </h4>
+                <div className="pyramid-box">
+                  {/* Salida */}
+                  {product.notes.top && product.notes.top.length > 0 && (
+                    <div className="pyramid-tier">
+                      <div className="pyramid-tier-header">
+                        <span>🍋 Notas de Salida</span>
+                        <span className="tier-timing">(Primeros 15-30 min)</span>
+                      </div>
+                      <div className="notes-chips-list">
+                        {product.notes.top.map((note, idx) => (
+                          <span key={idx} className="note-chip">{note}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Corazón */}
+                  {product.notes.heart && product.notes.heart.length > 0 && (
+                    <div className="pyramid-tier">
+                      <div className="pyramid-tier-header">
+                        <span>🌸 Notas de Corazón</span>
+                        <span className="tier-timing">(El alma de la fragancia)</span>
+                      </div>
+                      <div className="notes-chips-list">
+                        {product.notes.heart.map((note, idx) => (
+                          <span key={idx} className="note-chip">{note}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fondo */}
+                  {product.notes.base && product.notes.base.length > 0 && (
+                    <div className="pyramid-tier">
+                      <div className="pyramid-tier-header">
+                        <span>🪵 Notas de Fondo</span>
+                        <span className="tier-timing">(Fijación duradera 8h+)</span>
+                      </div>
+                      <div className="notes-chips-list">
+                        {product.notes.base.map((note, idx) => (
+                          <span key={idx} className="note-chip">{note}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Clima y Ocasión Ideal (Fragrantica Rating) */}
+            {product.climate && (
+              <div>
+                <h4 className="fragrantica-section-title">
+                  <span>☀️</span> Clima y Ocasión Ideal
+                </h4>
+                <div className="climate-box">
+                  <div className="climate-groups">
+                    {/* Estaciones */}
+                    <div className="climate-subgroup">
+                      <span className="climate-subgroup-title">Estaciones Recomendadas</span>
+                      <div className="season-badges-list">
+                        {allSeasons.map((season, idx) => (
+                          <span 
+                            key={idx} 
+                            className={`season-badge ${isRecommended(season) ? 'recommended' : ''}`}
+                          >
+                            {season === 'Verano' && '☀️'}
+                            {season === 'Primavera' && '🌸'}
+                            {season === 'Otoño' && '🍂'}
+                            {season === 'Invierno' && '❄️'}
+                            {' '}{season}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Momento del Día */}
+                    <div className="climate-subgroup">
+                      <span className="climate-subgroup-title">Momento del Día</span>
+                      <div className="season-badges-list">
+                        {product.climate.time && product.climate.time.map((time, idx) => (
+                          <span key={idx} className="season-badge recommended">
+                            {time === 'Día' ? '☀️ Día' : time === 'Noche' ? '🌙 Noche' : `✨ ${time}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ocasión */}
+                  {product.climate.occasion && (
+                    <div className="occasion-text-box">
+                      <strong>Recomendación de uso:</strong> {product.climate.occasion}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
