@@ -8,6 +8,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [activeCategory, setActiveCategory] = useState('Todas')
   const [activeGender, setActiveGender] = useState('Todos')
+  const [activeAroma, setActiveAroma] = useState('Todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -45,13 +46,15 @@ function App() {
   // Extraer categorías únicas
   const categories = ['Todas', ...new Set(productosData.map(p => p.category))]
   const genders = ['Todos', 'Damas', 'Caballeros']
+  const aromas = ['Todos', 'Dulces', 'Cítricos', 'Amaderados', 'Florales', 'Especiados', 'Acuáticos', 'Avainillados']
 
   // Filtrar productos
   const filteredProducts = productosData.filter(p => {
     const matchCategory = activeCategory === 'Todas' || p.category === activeCategory
     const matchGender = activeGender === 'Todos' || p.subcategory === activeGender || p.subcategory === null
+    const matchAroma = activeAroma === 'Todos' || (p.aromaFamilies && p.aromaFamilies.includes(activeAroma))
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-    return matchCategory && matchGender && matchSearch
+    return matchCategory && matchGender && matchAroma && matchSearch
   })
 
   const handleSearchBlur = () => {
@@ -119,7 +122,7 @@ function App() {
 
       {/* Header */}
       <header className="header">
-        <div className="brand-section" onClick={() => { setActiveCategory('Todas'); setActiveGender('Todos'); setSearchQuery(''); }}>
+        <div className="brand-section" onClick={() => { setActiveCategory('Todas'); setActiveGender('Todos'); setActiveAroma('Todos'); setSearchQuery(''); }}>
           <img src="/logo.jpg" alt="Logo WF" className="header-logo-img" />
           <div className="brand-info">
             <span className="logo-text">World Fragance</span>
@@ -210,6 +213,30 @@ function App() {
 
         {/* Filters Minimalist */}
         <div className="filters-wrapper">
+          {/* Aroma Family Filter */}
+          <div className="aroma-filter-container">
+            <span className="aroma-filter-label">Familia Olfativa / Tipo de Aroma</span>
+            <div className="aroma-pills-list">
+              {aromas.map(aroma => (
+                <button 
+                  key={aroma}
+                  className={`aroma-pill-btn ${activeAroma === aroma ? 'active' : ''}`}
+                  onClick={() => setActiveAroma(aroma)}
+                >
+                  {aroma === 'Dulces' && '🍬 '}
+                  {aroma === 'Cítricos' && '🍋 '}
+                  {aroma === 'Amaderados' && '🪵 '}
+                  {aroma === 'Florales' && '🌸 '}
+                  {aroma === 'Especiados' && '🌶️ '}
+                  {aroma === 'Acuáticos' && '🌊 '}
+                  {aroma === 'Avainillados' && '🍨 '}
+                  {aroma === 'Todos' && '✦ '}
+                  {aroma.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="categories-filter">
             {categories.map(cat => (
               <button 
@@ -244,10 +271,14 @@ function App() {
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="empty-results">
-            <p>No se encontraron perfumes con el nombre "{searchQuery}".</p>
+            <p>
+              {searchQuery 
+                ? `No se encontraron perfumes con el nombre "${searchQuery}".` 
+                : 'No se encontraron perfumes con los filtros seleccionados.'}
+            </p>
             <button 
               className="category-btn" 
-              onClick={() => { setSearchQuery(''); setActiveCategory('Todas'); setActiveGender('Todos'); }}
+              onClick={() => { setSearchQuery(''); setActiveCategory('Todas'); setActiveGender('Todos'); setActiveAroma('Todos'); }}
             >
               Ver todos los perfumes
             </button>
@@ -627,6 +658,32 @@ function PerfumeDetailModal({ product, onClose, onAdd }) {
             {/* Title & Description */}
             <div className="detail-title-section">
               <h2 className="detail-perfume-title">{product.name}</h2>
+              {product.aromaFamilies && product.aromaFamilies.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
+                  {product.aromaFamilies.map((fam, idx) => (
+                    <span key={idx} style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#ffffff'
+                    }}>
+                      {fam === 'Dulces' && '🍬 '}
+                      {fam === 'Cítricos' && '🍋 '}
+                      {fam === 'Amaderados' && '🪵 '}
+                      {fam === 'Florales' && '🌸 '}
+                      {fam === 'Especiados' && '🌶️ '}
+                      {fam === 'Acuáticos' && '🌊 '}
+                      {fam === 'Avainillados' && '🍨 '}
+                      {fam}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="detail-perfume-desc">{product.description}</p>
             </div>
 
